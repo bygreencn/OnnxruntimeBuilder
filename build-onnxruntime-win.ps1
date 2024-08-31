@@ -45,6 +45,10 @@ param (
     [string] $VsVer = 'v143',
 
     [Parameter(Mandatory = $false)]
+    [ValidateSet('19041', '20348', '22000', '22621', '26100')]
+    [string] $VsSDK = '19041',
+
+    [Parameter(Mandatory = $false)]
     [ValidateSet('mt', 'md')]
     [string] $VsCRT = 'md',
 
@@ -172,7 +176,7 @@ Set-PSDebug -Trace 0
 # 清屏
 Clear-Host
 
-Write-Host "Params: VsArch=$VsArch VsVer=$VsVer VsCRT=$VsCRT BuildJava=$BuildJava BuildType=$BuildType"
+Write-Host "Params: VsArch=$VsArch VsVer=$VsVer VsWindowsSDK=$VsWindowsSDK VsCRT=$VsCRT BuildJava=$BuildJava BuildType=$BuildType"
 
 switch ($VsArch)
 {
@@ -221,6 +225,25 @@ else
     $VsFlag = 'Visual Studio 16 2019'
 }
 
+switch ($VsSDK)
+{
+    26100 {
+        $VsWindowsSDK = '10.0.26100.0'
+    }
+    22621 {
+        $VsWindowsSDK = '10.0.22621.0'
+    }
+    22000 {
+        $VsWindowsSDK = '10.0.22000.0'
+    }
+    20348 {
+        $VsWindowsSDK = '10.0.20348.0'
+    }
+    default {
+        $VsWindowsSDK = '10.0.19041.0'
+    }
+}
+
 if ($VsCRT -eq "mt")
 {
     $StaticCrtFlag = "--enable_msvc_static_runtime"
@@ -259,7 +282,7 @@ python $PSScriptRoot\tools\ci_build\build.py `
 	--compile_no_warning_as_error `
 	--cmake_generator $VsFlag `
 	$StaticCrtFlag `
-	--cmake_extra_defines CMAKE_INSTALL_PREFIX=./install onnxruntime_BUILD_UNIT_TESTS=OFF
+	--cmake_extra_defines CMAKE_INSTALL_PREFIX=./install onnxruntime_BUILD_UNIT_TESTS=OFF CMAKE_SYSTEM_VERSION=$VsWindowsSDK CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION=$VsWindowsSDK
 
 if (!(Test-Path -Path $OutPutPath\$BuildType\$BuildType))
 {
